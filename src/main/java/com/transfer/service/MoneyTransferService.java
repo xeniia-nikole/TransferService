@@ -1,6 +1,6 @@
 package com.transfer.service;
 
-import com.transfer.TransferServiceApplication;
+import com.transfer.MoneyTransferServiceApplication;
 import com.transfer.errors.ErrorConfirmation;
 import com.transfer.errors.ErrorInputData;
 import com.transfer.model.*;
@@ -135,9 +135,9 @@ public class MoneyTransferService {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        Date todaysDate = new Date();
+        Date todayDate = new Date();
         if (cardDate != null) {
-            long diffDate = cardDate.getTime() - todaysDate.getTime();
+            long diffDate = cardDate.getTime() - todayDate.getTime();
             int month = Integer.parseInt(cardValid.substring(0, 2));
 
             return ((diffDate >= 0) && (month > 0) && (month < 13));
@@ -159,8 +159,8 @@ public class MoneyTransferService {
 
         currentCard.setAmountCard(new AmountCard(newValueCardFrom, currentCard.getAmountCard().getCurrency()));
 
-        String operationLog = "Время транзакции: "
-                + TransferServiceApplication.time
+        return "Время транзакции: "
+                + MoneyTransferServiceApplication.time
                 + ",\n Id транзакции: "
                 + operationId
                 + ",\n карта списания: "
@@ -175,7 +175,5 @@ public class MoneyTransferService {
                 + fee
                 + ",\n остаток на карте списания, руб.: "
                 + newValueCardFrom;
-
-        return operationLog;
     }
 }
