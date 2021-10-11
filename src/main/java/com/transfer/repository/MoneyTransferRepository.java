@@ -1,94 +1,110 @@
 package com.transfer.repository;
 
-import org.springframework.stereotype.Repository;
-import com.transfer.model.Amount;
+import com.transfer.errors.ErrorInputData;
+import com.transfer.model.AmountCard;
 import com.transfer.model.Card;
-import com.transfer.model.TransferData;
-import com.transfer.model.Verification;
+import com.transfer.model.DataOperation;
+import com.transfer.model.DataTransfer;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
 
-import java.io.FileWriter;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Repository
 public class MoneyTransferRepository {
 
-    final private Map<String, Card> cardsRepository = new ConcurrentHashMap<>();
-    final private Map<String, String> operationsRepository = new ConcurrentHashMap<>();
-    final private AtomicInteger id = new AtomicInteger(0);
+    public static Map<String, Card> cardsRepository = new ConcurrentHashMap<>();
 
-    String nameLog = "file.log";
-    String time = new SimpleDateFormat("HH:mm:ss dd.MM.yyyy").format(new Date());
+    @Autowired
+    private MoneyTransferRepository() {
+    }
 
+    public MoneyTransferRepository(Map<String, Card> cardsRepository) {
+        this.cardsRepository = cardsRepository;
+    }
 
-    public boolean transfer(TransferData transferData) {
+    public DataOperation transfer(DataTransfer dataTransfer) {
+        Card currentCard;
+        DataOperation dataNewOperation = null;
 
         for (Map.Entry<String, Card> cardRepoEntry : cardsRepository.entrySet()) {
 
-            if (transferData.getCardFromNumber().equals(cardRepoEntry.getKey())) {
+            if (dataTransfer.getCardFromNumber().equals(cardRepoEntry.getKey())) {
 
-                Card currentCard = cardRepoEntry.getValue();
-
-                if ((currentCard.getCardFromCVV().equals(transferData.getCardFromCVV())) || (currentCard.getCardFromValidTill().equals(transferData.getCardFromValidTill()))) {
-
-                    int currentCardValue = currentCard.getAmount().getValue();
-                    int transferValue = transferData.getAmount().getValue();
-
-                    if ((currentCardValue - transferValue) > 0) {
-
-                        currentCardValue -= transferValue;
-
-                        String fee = String.format("%.2f", transferValue * 0.01);
-
-                        currentCard.setAmount(new Amount(currentCardValue, currentCard.getAmount().getCurrency()));
-
-                        cardsRepository.put(currentCard.getCardFromNumber(), currentCard);
-
-                        String operationId = "Operation_" + id.getAndIncrement();
-
-                        String operationLog = "Время операции: "
-                                + time + " "
-                                + ", ID операции: "
-                                + operationId + " "
-                                + ", карта списания: "
-                                + currentCard.getCardFromNumber() + " "
-                                + ", карта зачисления: "
-                                + transferData.getCardToNumber() + " "
-                                + ", сумма перевода: "
-                                + transferValue + " "
-                                + ", валюта перевода: "
-                                + transferData.getAmount().getCurrency() + " "
-                                + ", комиссия в валюте перевода: "
-                                + fee + " "
-                                + ", результат: перевод прошёл удачно!\n";
+                currentCard = cardRepoEntry.getValue();
+                dataNewOperation = acceptData(currentCard, dataTransfer);
+            }
+        }
+        return dataNewOperation;
+    }
 
 
-                        operationsRepository.put(operationId, operationLog);
-
-                        System.out.println(operationLog);
-
-                        try (FileWriter writerLogs = new FileWriter(nameLog, true)) {
-                            writerLogs.write(operationLog);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-
-                        return true;
+    public boolean confirmOperation(String operationId, DataOperation dataOperation) {
+        if (operationId != null) {
+            String cardFromNumber = dataOperation.getCard().getCardFromNumber();
+            String cardToNumber = dataOperation.getCardToNumber();
+            synchronized (cardFromNumber) {
+                synchronized (cardToNumber) {
+                    Card currentCard = dataOperation.getCard();
+                    BigDecimal newValueCardFrom = dataOperation.getValue();
+                    currentCard.setAmountCard(new AmountCard(newValueCardFrom, "RUR"));
+                    cardsRepository.put(cardFromNumber, currentCard);
+                    if (cardsRepository.containsKey(cardToNumber)) {
+                        Card cardTo = cardsRepository.get(cardToNumber);
+                        BigDecimal valueCardTo = cardTo.getAmountCard().getValue();
+                        BigDecimal transferValue = dataOperation.getTransferValue();
+                        BigDecimal newValueCardTo = valueCardTo.add(transferValue)
+                                .setScale(2, RoundingMode.CEILING);
+                        cardTo.setAmountCard(new AmountCard(newValueCardTo, "RUR"));
+                        cardsRepository.put(cardToNumber, cardTo);
                     }
-
+                    return true;
                 }
             }
         }
         return false;
     }
 
-    public boolean confirmOperation(Verification verification) {
-        if (verification.getCode().equals(verification.getOperationID())) {
-            return true;
+
+    public static DataOperation acceptData(Card currentCard, DataTransfer dataTransfer) {
+
+        DataOperation dataNewOperation;
+        String cardToNumber = dataTransfer.getCardToNumber();
+        String logAmount = "На карте списания недостаточно средств";
+
+        if (!(currentCard.getCardFromNumber().equals(cardToNumber))
+                && (currentCard.getCardFromCVV().equals(dataTransfer.getCardFromCVV()))
+                && (currentCard.getCardFromValidTill().equals(dataTransfer.getCardFromValidTill()))) {
+
+            BigDecimal currentCardValue = currentCard.getAmountCard().getValue()
+                    .setScale(2, RoundingMode.CEILING);
+
+            BigDecimal transferValue = BigDecimal.valueOf(dataTransfer.getAmount().getValue() / 100)
+                    .setScale(2, RoundingMode.CEILING);
+
+            BigDecimal fee = transferValue.multiply(BigDecimal.valueOf(0.01))
+                    .setScale(2, RoundingMode.CEILING);
+
+            BigDecimal newValueCardFrom = (currentCardValue.subtract(transferValue.multiply(BigDecimal.valueOf(1.01))))
+                    .setScale(2, RoundingMode.CEILING);
+
+            if (newValueCardFrom.compareTo(BigDecimal.valueOf(0.01)
+                    .setScale(2, RoundingMode.CEILING)) > 0) {
+
+                dataNewOperation = new DataOperation(currentCard, cardToNumber, transferValue, newValueCardFrom, fee);
+
+            } else {
+                System.out.println(logAmount);
+                throw new ErrorInputData(logAmount);
+            }
+
+        } else {
+            throw new ErrorInputData("Ошибка ввода данных карты");
         }
-        return false;
+
+        return dataNewOperation;
     }
 }
