@@ -1,6 +1,6 @@
 package com.transfer.service;
 
-import com.transfer.TransferServiceApplication;
+import com.transfer.MoneyTransferServiceApplication;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -28,7 +28,7 @@ public class TransferLogFile implements TransferLogs {
                     e.printStackTrace();
                 }
                 try (FileWriter writerLogs = new FileWriter(nameLog, true)) {
-                    writerLogs.write("Время транзакции:" + TransferServiceApplication.time + ": " + msgLog + "\n");
+                    writerLogs.write("Время транзакции:" + MoneyTransferServiceApplication.time + ": " + msgLog + "\n");
 
                 } catch (Exception e) {
                     e.printStackTrace();
