@@ -1,29 +1,21 @@
 package com.transfer.model;
 
-import org.springframework.validation.annotation.Validated;
+import java.math.BigDecimal;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
-
-@Validated
-public class Amount {
-
-    @NotNull(message = "Необходимо ввести сумму перевода")
-    @Size(min = 0, message = "Сумма перевода не может быть меньше или равна 0")
-    private int value;
-
+public class AmountCard {
+    private BigDecimal value;
     private String currency;
 
-    public Amount(int value, String currency) {
+    public AmountCard(BigDecimal value, String currency) {
         this.value = value;
         this.currency = currency;
     }
 
-    public int getValue() {
+    public BigDecimal getValue() {
         return value;
     }
 
-    public void setValue(int value) {
+    public void setValue(BigDecimal value) {
         this.value = value;
     }
 
@@ -43,4 +35,3 @@ public class Amount {
                 '}';
     }
 }
-
