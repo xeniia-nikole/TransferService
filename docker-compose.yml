@@ -1,0 +1,14 @@
+version: "3.8"
+services:
+  app:
+    image: back_transfer:4.0
+    ports:
+      - "5500:5500"
+
+  front:
+    image: front_transfer:3.0
+    ports:
+      - "3000:3000"
+
+
+
