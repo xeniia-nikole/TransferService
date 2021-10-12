@@ -5,6 +5,7 @@ import com.transfer.model.Card;
 import com.transfer.repository.MoneyTransferRepository;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -48,4 +49,23 @@ public class MoneyTransferServiceApplication {
         }
 
     }
+//
+//        public static void createFiles() {
+//        String msgLog = "Файл fileOperatiosLogs.log успешно создан";
+//        File logFile = new File(nameLog);
+//        if (!logFile.exists()) {
+//            try {
+//                if (logFile.createNewFile())
+//                    System.out.println(msgLog);
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//            try (FileWriter writerLogs = new FileWriter(nameLog, true)) {
+//                writerLogs.write("Время операции:" + time + ": " + msgLog + "\n");
+//
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+//        }
+//    }
 }

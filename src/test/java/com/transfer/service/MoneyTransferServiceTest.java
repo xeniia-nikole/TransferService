@@ -133,16 +133,16 @@ public class MoneyTransferServiceTest {
 
     @Test
     void testValidateCardDate_correct() {
-        String testCardValdTill1 = "11/22";
-        System.out.printf("Валидная дата: %s!\n", testCardValdTill1);
-        Assertions.assertTrue(MoneyTransferService.validateCardDate(testCardValdTill1));
+        String testCardValidTill1 = "11/22";
+        System.out.printf("Валидная дата: %s!\n", testCardValidTill1);
+        Assertions.assertTrue(MoneyTransferService.validateCardDate(testCardValidTill1));
     }
 
     @Test
     void testValidateCardDate_incorrect() {
-        String testCardValdTill1 = "11/20";
-        System.out.printf("!!! Невалидная дата: %s\n", testCardValdTill1);
-        Assertions.assertFalse(MoneyTransferService.validateCardDate(testCardValdTill1));
+        String testCardValidTill1 = "11/20";
+        System.out.printf("!!! Невалидная дата: %s\n", testCardValidTill1);
+        Assertions.assertFalse(MoneyTransferService.validateCardDate(testCardValidTill1));
     }
 
     @Test
