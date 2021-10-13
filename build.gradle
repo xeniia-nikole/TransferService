@@ -38,6 +38,9 @@ dependencies {
     testImplementation 'org.springframework:spring-test:5.3.10'
     // https://mvnrepository.com/artifact/org.hamcrest/hamcrest-library
     testImplementation 'org.hamcrest:hamcrest-library:2.2'
+    // https://mvnrepository.com/artifact/com.jayway.jsonpath/json-path
+    implementation 'com.jayway.jsonpath:json-path:2.4.0'
+
 
 }
 
