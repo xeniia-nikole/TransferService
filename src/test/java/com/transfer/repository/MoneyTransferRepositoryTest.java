@@ -13,14 +13,14 @@ import java.util.Map;
 public class MoneyTransferRepositoryTest {
 
     BigDecimal testCardValue = BigDecimal.valueOf(203_345.15);
-    Card testCard = new Card("1111111111111111",
+    Card testCard = new Card("111111111111",
             "11/21",
             "111",
             new AmountCard(testCardValue, "RUR"));
 
     String testCardToNumber = "222222222222";
 
-    DataTransfer testTransferData = new DataTransfer("1111111111111111", testCardToNumber, "11/21",
+    DataTransfer testTransferData = new DataTransfer("111111111111", testCardToNumber, "11/21",
             "111",
             new Amount(100_000, "RUR"));
 
@@ -41,7 +41,7 @@ public class MoneyTransferRepositoryTest {
 
     @BeforeEach
     public void fillMap() {
-        testCardsRepository.put("1111111111111111", testCard);
+        testCardsRepository.put("111111111111", testCard);
     }
 
     @Test
@@ -61,8 +61,7 @@ public class MoneyTransferRepositoryTest {
 
     @Test
     void testConfirmOperationRepository() {
-        Boolean expectedConfirm = true;
         Boolean resultConfirm = new MoneyTransferRepository(testCardsRepository).confirmOperation(testOperationId, testDataOperation);
-        Assertions.assertEquals(expectedConfirm, resultConfirm);
+        Assertions.assertEquals(true, resultConfirm);
     }
 }
