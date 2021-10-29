@@ -15,6 +15,11 @@ import com.transfer.service.MoneyTransferService;
 @RestController
 @RequestMapping("/")
 public class MoneyTransferController {
+    private static final String transfer ="Транзакция подготовлена";
+    private static final String msgInput = "Ошибка ввода данных карты";
+    private static final String success = "Транзакция успешно завершена";
+    private static final String msgTransferError = "Ошибка перевода";
+    private static final String msgConfirmationError = "Ошибка подтверждения";
 
     private final MoneyTransferService moneyTransferService;
 
@@ -25,20 +30,19 @@ public class MoneyTransferController {
     @PostMapping("/transfer")
     public ResponseEntity<IdOperationResponse> transfer(@RequestBody DataTransfer dataTransfer) {
         String operationId = moneyTransferService.transfer(dataTransfer);
-        System.out.println("Транзакция подготовлена!");
+        System.out.println(transfer);
         return new ResponseEntity<>(new IdOperationResponse(operationId), HttpStatus.OK);
     }
 
     @PostMapping("/confirmOperation")
     public ResponseEntity<IdOperationResponse> confirmOperation(@RequestBody Verification verification) {
         String operationId = moneyTransferService.confirmOperation(verification);
-        System.out.println("Транзакция завершена успешно!");
+        System.out.println(success);
         return new ResponseEntity<>(new IdOperationResponse(operationId), HttpStatus.OK);
     }
 
     @ExceptionHandler(ErrorInputData.class)
     public ResponseEntity<ErrorResponse> handleErrorInputData(ErrorInputData e) {
-        String msgInput = "Ошибка ввода данных карты";
         System.out.println(msgInput);
         return new ResponseEntity<>(new ErrorResponse(e.getMessage(), 400),
                 HttpStatus.UNAUTHORIZED);
@@ -46,16 +50,14 @@ public class MoneyTransferController {
 
     @ExceptionHandler(ErrorTransfer.class)
     public ResponseEntity<ErrorResponse> handleErrorTransfer(ErrorTransfer e) {
-        String msgTransfer = "Ошибка перевода";
-        System.out.println(msgTransfer);
+        System.out.println(msgTransferError);
         return new ResponseEntity<>(new ErrorResponse(e.getMessage(), 500),
                 HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(ErrorConfirmation.class)
     public ResponseEntity<ErrorResponse> handleErrorConfirmation(ErrorConfirmation e) {
-        String msgConfirmation = "Ошибка подтверждения";
-        System.out.println(msgConfirmation);
+        System.out.println(msgConfirmationError);
         return new ResponseEntity<>(new ErrorResponse(e.getMessage(), 500),
                 HttpStatus.NOT_FOUND);
     }
