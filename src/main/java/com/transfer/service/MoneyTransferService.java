@@ -1,23 +1,31 @@
 package com.transfer.service;
 
-import com.transfer.MoneyTransferServiceApplication;
 import com.transfer.errors.ErrorConfirmation;
 import com.transfer.errors.ErrorInputData;
-import com.transfer.model.*;
+import com.transfer.model.DataOperation;
+import com.transfer.model.DataTransfer;
+import com.transfer.model.ValidationCode;
+import com.transfer.model.Verification;
 import com.transfer.repository.MoneyTransferRepository;
+import com.transfer.transfer.TransferLogConsole;
+import com.transfer.transfer.TransferLogFile;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 public class MoneyTransferService {
+    private static final String logData = "Ошибка ввода данных карты";
+    private static final String logTime = "Срок действия вашей карты истёк";
+    private static final String logCode = "Неверный код подтверждения";
+    private static final String logId = "Транзакция отклонена";
+    private static final String operationConfirmed = "Транзакция подтверждена";
+    private static final String infoSentToClient = "Вся информация о транзакции передана клиенту";
 
     private final TransferLogFile transferLogFile;
     private final MoneyTransferRepository moneyTransferRepository;
@@ -51,9 +59,7 @@ public class MoneyTransferService {
 
     public String transfer(DataTransfer dataTransfer) {
         String operationId;
-        String code = generateCode();
-        String logData = "Ошибка ввода данных карты";
-        String logTime = "Срок действия вашей карты истёк";
+        String code = ValidationCode.generateCode();
 
         String cardValidTill = dataTransfer.getCardFromValidTill();
 
@@ -63,7 +69,7 @@ public class MoneyTransferService {
                 operationId = "Bn@Operation#000" + idNumber.getAndIncrement();
                 operationsRepository.put(operationId, dataNewOperation);
                 verificationRepository.put(operationId, code);
-                sendCodeToPhone(code);
+                ValidationCode.sendCodeToPhone(code);
             } else {
                 throw new ErrorInputData(logData);
             }
@@ -77,19 +83,18 @@ public class MoneyTransferService {
 
     public String confirmOperation(Verification verification) {
         String operationId = verification.getOperationId();
-        String logCode = "Неверный код подтверждения";
-        String logId = "Транзакция отклонена!";
+
         if (verificationRepository.containsKey(operationId) && operationId != null) {
             String code = verificationRepository.get(operationId);
-            if (code != null && isCodeCorrect(code)) {
+            if (code != null && ValidationCode.isCodeCorrect(code)) {
                 DataOperation currentDataOperation = operationsRepository.get(operationId);
                 if (moneyTransferRepository.confirmOperation(operationId, currentDataOperation)) {
-                    System.out.println("Транзакция подтверждена!");
-                    String operationLogs = writeStringLog(operationId, currentDataOperation);
+                    System.out.println(operationConfirmed);
+                    String operationLogs = writeTransferLog(operationId, currentDataOperation);
                     synchronized (transferLogFile) {
                         if (transferLogFile.transferLog(operationLogs)
                                 && transferLogConsole.transferLog(operationLogs)) {
-                            System.out.println("Вся информация о транзакции передана клиенту");
+                            System.out.println(infoSentToClient);
                         }
                     }
                 } else {
@@ -107,73 +112,12 @@ public class MoneyTransferService {
         return operationId;
     }
 
-    public static String generateCode() {
-        Random random = new Random();
-        int codeInt = random.nextInt(8999) + 1000;
-        return String.valueOf(codeInt);
-    }
-
-    public static String sendCodeToPhone(String code) {
-        String msg = "Клиенту на телефон отправлен код подтвержения транзакции: " + code;
-        System.out.println(msg);
-        return msg;
-    }
-
-    // Эмуляция верификации:
-    // если случайный код меньше или равен 1,
-    // считаем, что клиент ввёл неверный пин-код.
-    public static boolean isCodeCorrect(String code) {
-        return (Integer.parseInt(code) > 1);
+    public static String writeTransferLog(String operationId, DataOperation dataOperation) {
+       return TransferLogConsole.writeStringLog(operationId, dataOperation);
     }
 
     public static boolean validateCardDate(String cardValid) {
-        Date cardDate = null;
-        SimpleDateFormat format = new SimpleDateFormat();
-        format.applyPattern("MM/yy");
-        try {
-            cardDate = format.parse(cardValid);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        Date todayDate = new Date();
-        if (cardDate != null) {
-            long diffDate = cardDate.getTime() - todayDate.getTime();
-            int month = Integer.parseInt(cardValid.substring(0, 2));
-
-            return ((diffDate >= 0) && (month > 0) && (month < 13));
-        }
-        return false;
+        return MoneyTransferRepository.validateCardDate(cardValid);
     }
 
-    public static String writeStringLog(String operationId, DataOperation dataOperation) {
-
-        Card currentCard = dataOperation.getCard();
-
-        String cardToNumber = dataOperation.getCardToNumber();
-
-        BigDecimal transferValue = dataOperation.getTransferValue();
-
-        BigDecimal newValueCardFrom = dataOperation.getValue();
-
-        BigDecimal fee = dataOperation.getFee();
-
-        currentCard.setAmountCard(new AmountCard(newValueCardFrom, currentCard.getAmountCard().getCurrency()));
-
-        return "Время транзакции: "
-                + MoneyTransferServiceApplication.time
-                + ",\n Id транзакции: "
-                + operationId
-                + ",\n карта списания: "
-                + currentCard.getCardFromNumber()
-                + ",\n карта зачисления: "
-                + cardToNumber
-                + ",\n сумма перевода: "
-                + transferValue
-                + ",\n валюта перевода: "
-                + currentCard.getAmountCard().getCurrency()
-                + ",\n комиссия в валюте перевода: "
-                + fee
-                + ",\n остаток на карте списания, руб.: "
-                + newValueCardFrom;
-    }
 }

@@ -10,9 +10,12 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+@SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
 @Repository
 public class MoneyTransferRepository {
 
@@ -23,7 +26,7 @@ public class MoneyTransferRepository {
     }
 
     public MoneyTransferRepository(Map<String, Card> cardsRepository) {
-        this.cardsRepository = cardsRepository;
+        MoneyTransferRepository.cardsRepository = cardsRepository;
     }
 
     public DataOperation transfer(DataTransfer dataTransfer) {
@@ -40,7 +43,6 @@ public class MoneyTransferRepository {
         }
         return dataNewOperation;
     }
-
 
     public boolean confirmOperation(String operationId, DataOperation dataOperation) {
         if (operationId != null) {
@@ -67,7 +69,6 @@ public class MoneyTransferRepository {
         }
         return false;
     }
-
 
     public static DataOperation acceptData(Card currentCard, DataTransfer dataTransfer) {
 
@@ -106,5 +107,24 @@ public class MoneyTransferRepository {
         }
 
         return dataNewOperation;
+    }
+
+    public static boolean validateCardDate(String cardValid) {
+        Date cardDate = null;
+        SimpleDateFormat format = new SimpleDateFormat();
+        format.applyPattern("MM/yy");
+        try {
+            cardDate = format.parse(cardValid);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        Date todayDate = new Date();
+        if (cardDate != null) {
+            long diffDate = cardDate.getTime() - todayDate.getTime();
+            int month = Integer.parseInt(cardValid.substring(0, 2));
+
+            return ((diffDate >= 0) && (month > 0) && (month < 13));
+        }
+        return false;
     }
 }

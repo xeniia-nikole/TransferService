@@ -3,6 +3,8 @@ package com.transfer.service;
 import com.transfer.MoneyTransferServiceApplication;
 import com.transfer.model.*;
 import com.transfer.repository.MoneyTransferRepository;
+import com.transfer.transfer.TransferLogConsole;
+import com.transfer.transfer.TransferLogFile;
 import org.junit.Before;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -113,7 +115,7 @@ public class MoneyTransferServiceTest {
     void testSendCodeToPhone() {
         String testCode = "7777";
         String expectedMessage = "Клиенту на телефон отправлен код подтвержения транзакции: " + testCode;
-        String resultMessage = MoneyTransferService.sendCodeToPhone(testCode);
+        String resultMessage = ValidationCode.sendCodeToPhone(testCode);
         Assertions.assertEquals(expectedMessage, resultMessage);
     }
 
@@ -121,14 +123,14 @@ public class MoneyTransferServiceTest {
     void testIsCodeCorrect_correct() {
         String testCode = "7777";
         System.out.printf("Корректный код: %s!\n", testCode);
-        Assertions.assertTrue(MoneyTransferService.isCodeCorrect(testCode));
+        Assertions.assertTrue(ValidationCode.isCodeCorrect(testCode));
     }
 
     @Test
     void testIsCodeCorrect_incorrect() {
         String testCode = "0000";
         System.out.printf("!!! Некорректный код: %s\n", testCode);
-        Assertions.assertFalse(MoneyTransferService.isCodeCorrect(testCode));
+        Assertions.assertFalse(ValidationCode.isCodeCorrect(testCode));
     }
 
     @Test
@@ -187,7 +189,7 @@ public class MoneyTransferServiceTest {
                 + newValueCardFrom;
 
 
-        String resultOperationLog = MoneyTransferService.writeStringLog(testOperationId, testDataOperation);
+        String resultOperationLog = MoneyTransferService.writeTransferLog(testOperationId, testDataOperation);
 
         Assertions.assertEquals(expectedOperationLog, resultOperationLog);
     }

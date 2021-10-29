@@ -1,6 +1,7 @@
-package com.transfer.service;
+package com.transfer.transfer;
 
 import com.transfer.MoneyTransferServiceApplication;
+import com.transfer.transfer.TransferLogs;
 import org.springframework.stereotype.Service;
 
 import java.io.File;

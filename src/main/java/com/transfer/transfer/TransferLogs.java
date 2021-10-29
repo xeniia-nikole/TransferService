@@ -1,4 +1,4 @@
-package com.transfer.service;
+package com.transfer.transfer;
 
 public interface TransferLogs {
     boolean transferLog(String operationsLogs);
